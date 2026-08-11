@@ -158,9 +158,64 @@
   }
   a { color: var(--accent); }
 
+  .featured {
+    margin: 16px 20px 0;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .featured .group-header {
+    flex-wrap: wrap;
+  }
+  .featured-hint {
+    width: 100%;
+    margin: 2px 0 0;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.5;
+  }
+  .featured-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+  }
+  .featured-actions .chip {
+    flex: 1 1 140px;
+    text-align: center;
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+  .featured-actions .chip.active {
+    box-shadow: inset 0 0 0 1px var(--accent);
+  }
+  .featured-player {
+    padding: 0 16px 14px;
+  }
+  .featured-player audio {
+    width: 100%;
+    height: 40px;
+  }
+  .featured-status {
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.5;
+    min-height: 1.5em;
+  }
+  .badge.dabei {
+    background: rgba(255,140,105,0.14);
+    color: #ff8c69;
+    border-color: rgba(255,140,105,0.4);
+  }
+
   @media (min-width: 720px) {
     .item { grid-template-columns: minmax(0, 1fr) minmax(280px, 460px); align-items: center; gap: 16px; }
     audio { height: 32px; }
+    .featured-player audio { height: 36px; }
   }
 </style>
 </head>
@@ -181,6 +236,27 @@
   </div>
 </header>
 
+<section class="featured" id="dabei">
+  <div class="group-header">
+    <span>大悲咒</span>
+    <span class="badge dabei">置頂</span>
+    <span class="group-count">關螢幕可持續循環</span>
+    <div class="featured-hint">
+      用手機播放後可關掉螢幕；請維持瀏覽器在背景、勿強制結束分頁。建議用 Chrome / Edge / Firefox（Safari 對 Opus 支援較差）。
+    </div>
+  </div>
+  <div class="featured-actions">
+    <button class="chip" type="button" data-dabei-mode="normal" id="btnLoopNormal">一般版 · 單曲循環</button>
+    <button class="chip" type="button" data-dabei-mode="fast" id="btnLoopFast">快速版 · 單曲循環</button>
+    <button class="chip" type="button" data-dabei-mode="playlist" id="btnLoopPlaylist">兩版清單循環</button>
+    <button class="chip" type="button" id="btnDabeiStop">停止</button>
+  </div>
+  <div class="featured-player">
+    <audio id="dabeiAudio" controls playsinline preload="metadata"></audio>
+    <div class="featured-status" id="dabeiStatus">選擇上方模式開始播放</div>
+  </div>
+</section>
+
 <main id="list"></main>
 
 <div class="now-playing" id="np">
@@ -193,10 +269,18 @@
 
 <div class="footer-note container">
   提示：本頁為靜態網頁，音檔以 HTML5 原生播放器串流播放 <code>*.opus</code>。
+  請用 <code>python3 serve.py</code> 啟動（需支援 HTTP Range，否則拖曳進度條會卡住）。
   若使用 Safari 無法播放 <code>.opus</code>，請改用 Chrome、Edge 或 Firefox。
+  大悲咒循環播放時，關掉螢幕後仍會繼續；若系統省電殺死後台，請把瀏覽器加入不受限／允許背景活動。
 </div>
 
 <script>
+// === 大悲咒（置頂，支援關螢幕循環）===
+const DABEI = [
+  { id: "normal", file: "Tai師父大悲咒108遍.opus", title: "大悲咒 · 一般速度版 108遍" },
+  { id: "fast", file: "Tai師父大悲咒快速版108遍.opus", title: "大悲咒 · 快速版 108遍" }
+];
+
 // === 檔案清單（與同層 .opus 音檔對應）===
 const FILES = [
   "2024年11月11日Tai師父答疑.opus",
@@ -477,7 +561,7 @@ const items = FILES.map((name) => {
   return { name, d, b, key, sortKey };
 });
 
-const totalCount = items.length;
+const totalCount = items.length + DABEI.length;
 document.getElementById("totalCount").textContent = totalCount;
 
 const $list = document.getElementById("list");
@@ -489,7 +573,197 @@ const $np = document.getElementById("np");
 const $npTitle = document.getElementById("npTitle");
 const $npStop = document.getElementById("npStop");
 
+const $dabeiAudio = document.getElementById("dabeiAudio");
+const $dabeiStatus = document.getElementById("dabeiStatus");
+const $btnLoopNormal = document.getElementById("btnLoopNormal");
+const $btnLoopFast = document.getElementById("btnLoopFast");
+const $btnLoopPlaylist = document.getElementById("btnLoopPlaylist");
+const $btnDabeiStop = document.getElementById("btnDabeiStop");
+
 let sortDir = "desc"; // desc = newest first
+
+function pauseAllAnswerAudios() {
+  document.querySelectorAll("#list audio").forEach(a => { if (!a.paused) a.pause(); });
+}
+
+// --- 大悲咒播放器：單一 audio + Media Session，利於關螢幕後續播／循環 ---
+const dabeiPlayer = {
+  mode: null, // "normal" | "fast" | "playlist"
+  index: 0,
+  playing: false,
+
+  trackById(id) {
+    return DABEI.find(t => t.id === id) || DABEI[0];
+  },
+  current() {
+    if (this.mode === "playlist") return DABEI[this.index % DABEI.length];
+    if (this.mode === "fast") return this.trackById("fast");
+    return this.trackById("normal");
+  },
+  setActiveButtons() {
+    for (const [el, mode] of [
+      [$btnLoopNormal, "normal"],
+      [$btnLoopFast, "fast"],
+      [$btnLoopPlaylist, "playlist"]
+    ]) {
+      el.classList.toggle("active", this.mode === mode && this.playing);
+    }
+  },
+  statusText() {
+    if (!this.mode) return "選擇上方模式開始播放";
+    if (!this.playing) return `已暫停：${this.current().title}（可再按模式或播放器繼續）`;
+    const t = this.current();
+    if (this.mode === "playlist") {
+      return `清單循環中：${t.title}（播完自動接下一段）`;
+    }
+    return `單曲循環中：${t.title}`;
+  },
+  updateUI() {
+    $dabeiStatus.textContent = this.statusText();
+    this.setActiveButtons();
+    if (this.playing) {
+      $np.classList.add("show");
+      $npTitle.textContent = this.current().title + (this.mode === "playlist" ? " · 清單循環" : " · 單曲循環");
+    }
+  },
+  updateMediaSession() {
+    if (!("mediaSession" in navigator)) return;
+    const t = this.current();
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: t.title,
+      artist: "Tai 師父",
+      album: this.mode === "playlist" ? "大悲咒清單循環" : "大悲咒單曲循環"
+    });
+    navigator.mediaSession.playbackState = this.playing ? "playing" : "paused";
+  },
+  applyTrack(track, { loop }) {
+    const url = encodeURI(track.file);
+    if ($dabeiAudio.getAttribute("src") !== url) {
+      $dabeiAudio.src = url;
+    }
+    $dabeiAudio.loop = !!loop;
+  },
+  async playMode(mode) {
+    pauseAllAnswerAudios();
+    this.mode = mode;
+    this.index = mode === "fast" ? 1 : 0;
+    this.applyTrack(this.current(), { loop: mode !== "playlist" });
+    try {
+      await $dabeiAudio.play();
+      this.playing = true;
+      this.updateUI();
+      this.updateMediaSession();
+    } catch (err) {
+      this.playing = false;
+      $dabeiStatus.textContent = "無法播放：請點擊按鈕後再試，或確認瀏覽器支援 Opus。";
+      this.setActiveButtons();
+      console.warn(err);
+    }
+  },
+  async onEnded() {
+    if (this.mode !== "playlist") return;
+    this.index = (this.index + 1) % DABEI.length;
+    this.applyTrack(this.current(), { loop: false });
+    this.updateUI();
+    try {
+      await $dabeiAudio.play();
+      this.playing = true;
+      this.updateMediaSession();
+    } catch (err) {
+      try {
+        await new Promise(r => setTimeout(r, 250));
+        await $dabeiAudio.play();
+        this.playing = true;
+        this.updateMediaSession();
+      } catch (err2) {
+        this.playing = false;
+        $dabeiStatus.textContent = "清單切歌失敗，請再點「兩版清單循環」繼續。";
+        this.setActiveButtons();
+        console.warn(err2);
+      }
+    }
+  },
+  stop() {
+    this.playing = false;
+    this.mode = null;
+    $dabeiAudio.pause();
+    $dabeiAudio.removeAttribute("src");
+    $dabeiAudio.load();
+    this.updateUI();
+    if ("mediaSession" in navigator) {
+      navigator.mediaSession.playbackState = "none";
+      try { navigator.mediaSession.metadata = null; } catch (_) {}
+    }
+    const anyPlaying = Array.from(document.querySelectorAll("#list audio")).some(o => !o.paused);
+    if (!anyPlaying) $np.classList.remove("show");
+  }
+};
+
+$dabeiAudio.setAttribute("playsinline", "");
+$dabeiAudio.setAttribute("webkit-playsinline", "");
+
+$dabeiAudio.addEventListener("ended", () => { dabeiPlayer.onEnded(); });
+$dabeiAudio.addEventListener("play", () => {
+  pauseAllAnswerAudios();
+  if (dabeiPlayer.mode) {
+    dabeiPlayer.playing = true;
+    dabeiPlayer.updateUI();
+    dabeiPlayer.updateMediaSession();
+  }
+});
+$dabeiAudio.addEventListener("pause", () => {
+  if ($dabeiAudio.ended) return;
+  if (!dabeiPlayer.mode) return;
+  dabeiPlayer.playing = false;
+  dabeiPlayer.updateUI();
+  if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "paused";
+  const anyPlaying = Array.from(document.querySelectorAll("#list audio")).some(o => !o.paused);
+  if (!anyPlaying) $np.classList.remove("show");
+});
+
+$btnLoopNormal.addEventListener("click", () => dabeiPlayer.playMode("normal"));
+$btnLoopFast.addEventListener("click", () => dabeiPlayer.playMode("fast"));
+$btnLoopPlaylist.addEventListener("click", () => dabeiPlayer.playMode("playlist"));
+$btnDabeiStop.addEventListener("click", () => dabeiPlayer.stop());
+
+if ("mediaSession" in navigator) {
+  try {
+    navigator.mediaSession.setActionHandler("play", () => {
+      $dabeiAudio.play().then(() => {
+        dabeiPlayer.playing = true;
+        dabeiPlayer.updateUI();
+        dabeiPlayer.updateMediaSession();
+      }).catch(() => {});
+    });
+    navigator.mediaSession.setActionHandler("pause", () => { $dabeiAudio.pause(); });
+    navigator.mediaSession.setActionHandler("stop", () => dabeiPlayer.stop());
+    navigator.mediaSession.setActionHandler("nexttrack", async () => {
+      if (dabeiPlayer.mode !== "playlist") return;
+      dabeiPlayer.index = (dabeiPlayer.index + 1) % DABEI.length;
+      dabeiPlayer.applyTrack(dabeiPlayer.current(), { loop: false });
+      try {
+        await $dabeiAudio.play();
+        dabeiPlayer.playing = true;
+        dabeiPlayer.updateUI();
+        dabeiPlayer.updateMediaSession();
+      } catch (_) {}
+    });
+    navigator.mediaSession.setActionHandler("previoustrack", async () => {
+      if (dabeiPlayer.mode === "playlist") {
+        dabeiPlayer.index = (dabeiPlayer.index - 1 + DABEI.length) % DABEI.length;
+        dabeiPlayer.applyTrack(dabeiPlayer.current(), { loop: false });
+        try {
+          await $dabeiAudio.play();
+          dabeiPlayer.playing = true;
+          dabeiPlayer.updateUI();
+          dabeiPlayer.updateMediaSession();
+        } catch (_) {}
+      } else {
+        $dabeiAudio.currentTime = 0;
+      }
+    });
+  } catch (_) { /* older browsers */ }
+}
 
 function render() {
   const q = $search.value.trim().toLowerCase();
@@ -512,7 +786,7 @@ function render() {
   );
 
   $list.innerHTML = "";
-  $stats.textContent = `顯示 ${filtered.length} / ${totalCount}`;
+  $stats.textContent = `顯示 ${filtered.length} / ${items.length}`;
 
   if (filtered.length === 0) {
     const empty = document.createElement("div");
@@ -564,19 +838,20 @@ function escapeHtml(s) {
 function escapeAttr(s) { return escapeHtml(s); }
 
 function wireAudio() {
-  const audios = document.querySelectorAll("audio");
+  const audios = document.querySelectorAll("#list audio");
   audios.forEach(a => {
     a.addEventListener("play", () => {
+      dabeiPlayer.stop();
       audios.forEach(o => { if (o !== a && !o.paused) o.pause(); });
       $np.classList.add("show");
       $npTitle.textContent = a.dataset.title || "";
     });
     a.addEventListener("pause", () => {
-      const anyPlaying = Array.from(audios).some(o => !o.paused);
+      const anyPlaying = Array.from(audios).some(o => !o.paused) || (dabeiPlayer.playing && !$dabeiAudio.paused);
       if (!anyPlaying) $np.classList.remove("show");
     });
     a.addEventListener("ended", () => {
-      const anyPlaying = Array.from(audios).some(o => !o.paused);
+      const anyPlaying = Array.from(audios).some(o => !o.paused) || (dabeiPlayer.playing && !$dabeiAudio.paused);
       if (!anyPlaying) $np.classList.remove("show");
     });
   });
@@ -596,7 +871,8 @@ $sortOld.addEventListener("click", () => {
   render();
 });
 $npStop.addEventListener("click", () => {
-  document.querySelectorAll("audio").forEach(a => { if (!a.paused) a.pause(); });
+  dabeiPlayer.stop();
+  document.querySelectorAll("#list audio").forEach(a => { if (!a.paused) a.pause(); });
   $np.classList.remove("show");
 });
 
