@@ -203,9 +203,14 @@
   }
   .featured-player {
     padding: 0 0 14px;
+    position: relative;
   }
   .featured-player audio {
-    display: none;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
   }
   .dabei-art {
     display: block;
@@ -257,6 +262,7 @@
     accent-color: var(--accent);
     height: 28px;
     cursor: pointer;
+    touch-action: none;
   }
   .dabei-seek:disabled {
     opacity: 0.45;
@@ -304,7 +310,7 @@
     <span class="badge dabei">置頂</span>
     <span class="group-count">關螢幕可持續循環</span>
     <div class="featured-hint">
-      用手機播放後可關掉螢幕；請維持瀏覽器在背景、勿強制結束分頁。建議用 Chrome / Edge / Firefox（Safari 對 Opus 支援較差）。
+      用手機播放後可關掉螢幕；請維持瀏覽器在背景、勿強制結束分頁。清單循環請用 Chrome / Edge / Firefox（Safari 對 Opus 與背景切歌支援較差）。
     </div>
   </div>
   <div class="featured-actions">
@@ -323,7 +329,8 @@
       decoding="async"
       fetchpriority="low"
     />
-    <audio id="dabeiAudio" playsinline preload="metadata"></audio>
+    <audio id="dabeiAudio" playsinline preload="auto"></audio>
+    <audio id="dabeiAudioB" playsinline preload="auto"></audio>
     <div class="dabei-controls" id="dabeiControls">
       <button type="button" class="dabei-play" id="dabeiPlayBtn" aria-label="播放或暫停" disabled>▶</button>
       <span class="dabei-time" id="dabeiTime">0:00 / 0:00</span>
@@ -667,6 +674,7 @@ const $npTitle = document.getElementById("npTitle");
 const $npStop = document.getElementById("npStop");
 
 const $dabeiAudio = document.getElementById("dabeiAudio");
+const $dabeiAudioB = document.getElementById("dabeiAudioB");
 const $dabeiStatus = document.getElementById("dabeiStatus");
 const $dabeiPlayBtn = document.getElementById("dabeiPlayBtn");
 const $dabeiTime = document.getElementById("dabeiTime");
@@ -692,7 +700,15 @@ function formatTime(sec) {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-// --- 大悲咒播放器：自訂進度條鎖定真實時長，避免 Opus seek 膨脹 duration ---
+function prepareAudioEl(el) {
+  el.setAttribute("playsinline", "");
+  el.setAttribute("webkit-playsinline", "");
+  el.preload = "auto";
+  el.loop = false;
+}
+
+// --- 大悲咒播放器 ---
+// 清單循環用兩顆 audio 固定各載一首，點擊時先解鎖；關螢幕後不改 src，只切換播放。
 const dabeiPlayer = {
   mode: null, // "normal" | "fast" | "playlist"
   index: 0,
@@ -700,11 +716,12 @@ const dabeiPlayer = {
   lockedDuration: 0,
   scrubbing: false,
   ending: false,
+  switching: false,
   seekCooldownUntil: 0,
   SEEK_MAX: 1000,
-  END_EPSILON: 0.05,
-  // 拖曳進度最多到結尾前 1 秒，避免原生 audio 觸發 ended / duration 膨脹
+  END_EPSILON: 0.35,
   SEEK_END_MARGIN: 1.0,
+  els: [$dabeiAudio, $dabeiAudioB],
 
   trackById(id) {
     return DABEI.find(t => t.id === id) || DABEI[0];
@@ -713,6 +730,12 @@ const dabeiPlayer = {
     if (this.mode === "playlist") return DABEI[this.index % DABEI.length];
     if (this.mode === "fast") return this.trackById("fast");
     return this.trackById("normal");
+  },
+  activeEl() {
+    return this.els[this.index % this.els.length];
+  },
+  otherEl() {
+    return this.els[(this.index + 1) % this.els.length];
   },
   setActiveButtons() {
     for (const [el, mode] of [
@@ -747,8 +770,9 @@ const dabeiPlayer = {
     this.syncScrubber();
   },
   syncScrubber() {
+    const el = this.activeEl();
     const dur = this.lockedDuration || 0;
-    const t = Math.min(Math.max($dabeiAudio.currentTime || 0, 0), dur || 0);
+    const t = Math.min(Math.max(el.currentTime || 0, 0), dur || 0);
     $dabeiTime.textContent = `${formatTime(t)} / ${formatTime(dur)}`;
     if (!this.scrubbing && dur > 0) {
       $dabeiSeek.value = String(Math.round((t / dur) * this.SEEK_MAX));
@@ -757,6 +781,7 @@ const dabeiPlayer = {
   updateMediaSession() {
     if (!("mediaSession" in navigator)) return;
     const t = this.current();
+    const el = this.activeEl();
     navigator.mediaSession.metadata = new MediaMetadata({
       title: t.title,
       artist: "Tai 師父 · 西方三聖",
@@ -768,37 +793,85 @@ const dabeiPlayer = {
       if (this.lockedDuration > 0) {
         navigator.mediaSession.setPositionState({
           duration: this.lockedDuration,
-          playbackRate: $dabeiAudio.playbackRate || 1,
-          position: Math.min($dabeiAudio.currentTime || 0, this.lockedDuration)
+          playbackRate: el.playbackRate || 1,
+          position: Math.min(el.currentTime || 0, this.lockedDuration)
         });
       }
     } catch (_) { /* unsupported */ }
   },
-  applyTrack(track, { loop }) {
+  bindSource(el, track) {
     const url = encodeURI(track.file);
-    this.lockedDuration = Number(track.duration) || 0;
-    // 不用原生 loop：改在接近鎖定結尾時自行重播，避免拖到最右讓 duration 膨脹
-    $dabeiAudio.loop = false;
-    if ($dabeiAudio.getAttribute("src") !== url) {
-      $dabeiAudio.src = url;
+    if (el.getAttribute("src") !== url) {
+      el.src = url;
+      el.load();
     }
-    this.syncScrubber();
+    el.loop = false;
+  },
+  async unlock(el) {
+    const prevMuted = el.muted;
+    el.muted = true;
+    try {
+      await el.play();
+      el.pause();
+      try { el.currentTime = 0; } catch (_) {}
+    } catch (_) { /* 部分瀏覽器仍可能擋；點擊當下已盡力解鎖 */ }
+    el.muted = prevMuted;
+  },
+  async primeSources() {
+    this.els.forEach((el, i) => this.bindSource(el, DABEI[i]));
+    await Promise.all(this.els.map((el) => this.unlock(el)));
   },
   seekToRatio(ratio) {
     if (!this.lockedDuration) return;
+    const el = this.activeEl();
     const maxT = Math.max(0, this.lockedDuration - this.SEEK_END_MARGIN);
-    const t = Math.min(Math.max(ratio, 0), 1) * maxT;
-    try { $dabeiAudio.currentTime = t; } catch (_) {}
-    this.seekCooldownUntil = performance.now() + 1000;
-    this.syncScrubber();
+    const t = Math.min(Math.max(Number(ratio) || 0, 0), 1) * maxT;
+    const wasPlaying = !el.paused && !el.ended;
+    const apply = () => {
+      try {
+        if (typeof el.fastSeek === "function") el.fastSeek(t);
+        else el.currentTime = t;
+      } catch (_) {
+        try { el.currentTime = t; } catch (__) {}
+      }
+      this.seekCooldownUntil = performance.now() + 1200;
+      this.scrubbing = false;
+      this.syncScrubber();
+      if (wasPlaying && el.paused) {
+        el.play().catch(() => {});
+      }
+    };
+    if (el.readyState >= 1) apply();
+    else el.addEventListener("loadedmetadata", apply, { once: true });
+  },
+  commitSeek() {
+    if (!this.mode || !this.lockedDuration) {
+      this.scrubbing = false;
+      return;
+    }
+    const ratio = Number($dabeiSeek.value) / this.SEEK_MAX;
+    this.seekToRatio(ratio);
   },
   async playMode(mode) {
     pauseAllAnswerAudios();
     this.mode = mode;
     this.index = mode === "fast" ? 1 : 0;
-    this.applyTrack(this.current(), { loop: mode !== "playlist" });
+    this.ending = false;
+    this.switching = false;
     try {
-      await $dabeiAudio.play();
+      await this.primeSources();
+    } catch (_) {}
+    this.els.forEach((el, i) => {
+      if (i !== this.index) {
+        el.pause();
+        try { el.currentTime = 0; } catch (_) {}
+      }
+    });
+    this.lockedDuration = Number(this.current().duration) || 0;
+    try {
+      const el = this.activeEl();
+      try { el.currentTime = 0; } catch (_) {}
+      await el.play();
       this.playing = true;
       this.updateUI();
       this.updateMediaSession();
@@ -811,10 +884,11 @@ const dabeiPlayer = {
   },
   async togglePlay() {
     if (!this.mode) return;
-    if ($dabeiAudio.paused) {
+    const el = this.activeEl();
+    if (el.paused) {
       pauseAllAnswerAudios();
       try {
-        await $dabeiAudio.play();
+        await el.play();
         this.playing = true;
         this.updateUI();
         this.updateMediaSession();
@@ -822,55 +896,81 @@ const dabeiPlayer = {
         console.warn(err);
       }
     } else {
-      $dabeiAudio.pause();
+      el.pause();
     }
   },
-  async onEnded() {
-    if (this.ending) return;
+  async advancePlaylist() {
+    if (this.mode !== "playlist" || this.ending) return;
     this.ending = true;
+    this.switching = true;
+    const prevEl = this.activeEl();
+    this.index = (this.index + 1) % DABEI.length;
+    const nextEl = this.activeEl();
+    this.lockedDuration = Number(this.current().duration) || 0;
     try {
-      if (this.mode !== "playlist") {
-        // 單曲循環
-        try { $dabeiAudio.currentTime = 0; } catch (_) {}
-        try {
-          await $dabeiAudio.play();
-          this.playing = true;
-          this.updateUI();
-          this.updateMediaSession();
-        } catch (_) {}
-        return;
-      }
-      this.index = (this.index + 1) % DABEI.length;
-      this.applyTrack(this.current(), { loop: false });
+      try { nextEl.currentTime = 0; } catch (_) {}
+      await nextEl.play();
+      prevEl.pause();
+      try { prevEl.currentTime = 0; } catch (_) {}
+      this.playing = true;
       this.updateUI();
+      this.updateMediaSession();
+    } catch (err) {
       try {
-        await $dabeiAudio.play();
+        await new Promise((r) => setTimeout(r, 120));
+        await nextEl.play();
+        prevEl.pause();
         this.playing = true;
+        this.updateUI();
         this.updateMediaSession();
-      } catch (err) {
-        try {
-          await new Promise(r => setTimeout(r, 250));
-          await $dabeiAudio.play();
-          this.playing = true;
-          this.updateMediaSession();
-        } catch (err2) {
-          this.playing = false;
-          $dabeiStatus.textContent = "清單切歌失敗，請再點「兩版清單循環」繼續。";
-          this.setActiveButtons();
-          console.warn(err2);
-        }
+      } catch (err2) {
+        this.playing = false;
+        $dabeiStatus.textContent = "清單切歌失敗，請再點「兩版清單循環」繼續。";
+        this.setActiveButtons();
+        console.warn(err2);
       }
     } finally {
-      setTimeout(() => { this.ending = false; }, 400);
+      this.switching = false;
+      setTimeout(() => { this.ending = false; }, 800);
     }
+  },
+  async onEnded(fromEl) {
+    if (fromEl && fromEl !== this.activeEl()) return;
+    if (performance.now() < this.seekCooldownUntil) {
+      try {
+        const back = Math.max(0, (this.lockedDuration || 0) - this.SEEK_END_MARGIN);
+        this.activeEl().currentTime = back;
+      } catch (_) {}
+      return;
+    }
+    if (this.mode !== "playlist") {
+      if (this.ending) return;
+      this.ending = true;
+      const el = this.activeEl();
+      try { el.currentTime = 0; } catch (_) {}
+      try {
+        await el.play();
+        this.playing = true;
+        this.updateUI();
+        this.updateMediaSession();
+      } catch (_) {}
+      setTimeout(() => { this.ending = false; }, 400);
+      return;
+    }
+    await this.advancePlaylist();
   },
   maybeHandleNearEnd() {
     if (!this.mode || !this.lockedDuration || this.scrubbing || this.ending) return;
     if (performance.now() < this.seekCooldownUntil) return;
-    if ($dabeiAudio.paused) return;
-    if (($dabeiAudio.currentTime || 0) >= this.lockedDuration - this.END_EPSILON) {
-      this.onEnded();
+    const el = this.activeEl();
+    if (el.paused) return;
+    const remain = this.lockedDuration - (el.currentTime || 0);
+    if (this.mode === "playlist") {
+      // 結尾前提早接上已解鎖的下一首，避免關螢幕後空檔被系統擋 play()
+      if (remain <= 0.45) this.advancePlaylist();
+      return;
     }
+    if (remain <= this.END_EPSILON) this.onEnded(el);
   },
   stop() {
     this.playing = false;
@@ -878,10 +978,12 @@ const dabeiPlayer = {
     this.lockedDuration = 0;
     this.scrubbing = false;
     this.ending = false;
+    this.switching = false;
     this.seekCooldownUntil = 0;
-    $dabeiAudio.pause();
-    $dabeiAudio.removeAttribute("src");
-    $dabeiAudio.load();
+    this.els.forEach((el) => {
+      el.pause();
+      try { el.currentTime = 0; } catch (_) {}
+    });
     $dabeiSeek.value = "0";
     $dabeiTime.textContent = "0:00 / 0:00";
     this.updateUI();
@@ -894,44 +996,51 @@ const dabeiPlayer = {
   }
 };
 
-$dabeiAudio.setAttribute("playsinline", "");
-$dabeiAudio.setAttribute("webkit-playsinline", "");
-
-$dabeiAudio.addEventListener("timeupdate", () => {
-  dabeiPlayer.syncScrubber();
-  dabeiPlayer.maybeHandleNearEnd();
-  if (dabeiPlayer.playing) dabeiPlayer.updateMediaSession();
-});
-$dabeiAudio.addEventListener("loadedmetadata", () => {
-  // 若瀏覽器讀到的 duration 合理，仍以我們鎖定值為準；此處只更新 UI
-  dabeiPlayer.syncScrubber();
-});
-$dabeiAudio.addEventListener("durationchange", () => {
-  // 忽略瀏覽器因 seek 造成的 duration 膨脹，畫面只顯示 lockedDuration
-  dabeiPlayer.syncScrubber();
-});
-$dabeiAudio.addEventListener("play", () => {
-  pauseAllAnswerAudios();
-  if (dabeiPlayer.mode) {
-    dabeiPlayer.playing = true;
+dabeiPlayer.els.forEach((el) => {
+  prepareAudioEl(el);
+  el.addEventListener("timeupdate", () => {
+    if (el !== dabeiPlayer.activeEl()) return;
+    dabeiPlayer.syncScrubber();
+    dabeiPlayer.maybeHandleNearEnd();
+    if (dabeiPlayer.playing) dabeiPlayer.updateMediaSession();
+  });
+  el.addEventListener("loadedmetadata", () => {
+    if (el === dabeiPlayer.activeEl()) dabeiPlayer.syncScrubber();
+  });
+  el.addEventListener("durationchange", () => {
+    if (el === dabeiPlayer.activeEl()) dabeiPlayer.syncScrubber();
+  });
+  el.addEventListener("play", () => {
+    if (el !== dabeiPlayer.activeEl()) return;
+    pauseAllAnswerAudios();
+    if (dabeiPlayer.mode) {
+      dabeiPlayer.playing = true;
+      dabeiPlayer.updateUI();
+      dabeiPlayer.updateMediaSession();
+    }
+  });
+  el.addEventListener("pause", () => {
+    if (dabeiPlayer.switching || dabeiPlayer.ending) return;
+    if (el !== dabeiPlayer.activeEl()) return;
+    if (el.ended) return;
+    if (!dabeiPlayer.mode) return;
+    dabeiPlayer.playing = false;
     dabeiPlayer.updateUI();
-    dabeiPlayer.updateMediaSession();
-  }
-});
-$dabeiAudio.addEventListener("pause", () => {
-  if ($dabeiAudio.ended) return;
-  if (!dabeiPlayer.mode) return;
-  dabeiPlayer.playing = false;
-  dabeiPlayer.updateUI();
-  if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "paused";
-  const anyPlaying = Array.from(document.querySelectorAll("#list audio")).some(o => !o.paused);
-  if (!anyPlaying) $np.classList.remove("show");
+    if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "paused";
+    const anyPlaying = Array.from(document.querySelectorAll("#list audio")).some(o => !o.paused);
+    if (!anyPlaying) $np.classList.remove("show");
+  });
+  el.addEventListener("ended", () => { dabeiPlayer.onEnded(el); });
 });
 
 $dabeiPlayBtn.addEventListener("click", () => dabeiPlayer.togglePlay());
 $dabeiSeek.addEventListener("pointerdown", () => { dabeiPlayer.scrubbing = true; });
-$dabeiSeek.addEventListener("pointerup", () => { dabeiPlayer.scrubbing = false; dabeiPlayer.syncScrubber(); });
-$dabeiSeek.addEventListener("pointercancel", () => { dabeiPlayer.scrubbing = false; dabeiPlayer.syncScrubber(); });
+$dabeiSeek.addEventListener("touchstart", () => { dabeiPlayer.scrubbing = true; }, { passive: true });
+$dabeiSeek.addEventListener("pointerup", () => { dabeiPlayer.commitSeek(); });
+$dabeiSeek.addEventListener("pointercancel", () => {
+  dabeiPlayer.scrubbing = false;
+  dabeiPlayer.syncScrubber();
+});
 $dabeiSeek.addEventListener("input", () => {
   dabeiPlayer.scrubbing = true;
   const ratio = Number($dabeiSeek.value) / dabeiPlayer.SEEK_MAX;
@@ -939,22 +1048,15 @@ $dabeiSeek.addEventListener("input", () => {
   const preview = ratio * Math.max(0, dur - dabeiPlayer.SEEK_END_MARGIN);
   $dabeiTime.textContent = `${formatTime(preview)} / ${formatTime(dur)}`;
 });
-$dabeiSeek.addEventListener("change", () => {
-  const ratio = Number($dabeiSeek.value) / dabeiPlayer.SEEK_MAX;
-  dabeiPlayer.seekToRatio(ratio);
-  dabeiPlayer.scrubbing = false;
-});
+$dabeiSeek.addEventListener("change", () => { dabeiPlayer.commitSeek(); });
 
-$dabeiAudio.addEventListener("ended", () => {
-  // 若剛拖曳過，略過這次 ended，避免 duration 膨脹後的誤觸
-  if (performance.now() < dabeiPlayer.seekCooldownUntil) {
-    try {
-      const back = Math.max(0, (dabeiPlayer.lockedDuration || 0) - dabeiPlayer.SEEK_END_MARGIN);
-      $dabeiAudio.currentTime = back;
-    } catch (_) {}
-    return;
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState !== "visible") return;
+  if (dabeiPlayer.mode !== "playlist" || !dabeiPlayer.playing) return;
+  const el = dabeiPlayer.activeEl();
+  if (el.ended || (el.paused && !dabeiPlayer.switching)) {
+    dabeiPlayer.advancePlaylist();
   }
-  dabeiPlayer.onEnded();
 });
 
 $btnLoopNormal.addEventListener("click", () => dabeiPlayer.playMode("normal"));
@@ -965,43 +1067,31 @@ $btnDabeiStop.addEventListener("click", () => dabeiPlayer.stop());
 if ("mediaSession" in navigator) {
   try {
     navigator.mediaSession.setActionHandler("play", () => {
-      $dabeiAudio.play().then(() => {
+      dabeiPlayer.activeEl().play().then(() => {
         dabeiPlayer.playing = true;
         dabeiPlayer.updateUI();
         dabeiPlayer.updateMediaSession();
       }).catch(() => {});
     });
-    navigator.mediaSession.setActionHandler("pause", () => { $dabeiAudio.pause(); });
+    navigator.mediaSession.setActionHandler("pause", () => { dabeiPlayer.activeEl().pause(); });
     navigator.mediaSession.setActionHandler("stop", () => dabeiPlayer.stop());
     navigator.mediaSession.setActionHandler("seekto", (details) => {
       if (!dabeiPlayer.lockedDuration || details.seekTime == null) return;
       const maxT = Math.max(0, dabeiPlayer.lockedDuration - dabeiPlayer.END_EPSILON);
-      try { $dabeiAudio.currentTime = Math.min(Math.max(details.seekTime, 0), maxT); } catch (_) {}
+      try { dabeiPlayer.activeEl().currentTime = Math.min(Math.max(details.seekTime, 0), maxT); } catch (_) {}
       dabeiPlayer.syncScrubber();
     });
     navigator.mediaSession.setActionHandler("nexttrack", async () => {
       if (dabeiPlayer.mode !== "playlist") return;
-      dabeiPlayer.index = (dabeiPlayer.index + 1) % DABEI.length;
-      dabeiPlayer.applyTrack(dabeiPlayer.current(), { loop: false });
-      try {
-        await $dabeiAudio.play();
-        dabeiPlayer.playing = true;
-        dabeiPlayer.updateUI();
-        dabeiPlayer.updateMediaSession();
-      } catch (_) {}
+      await dabeiPlayer.advancePlaylist();
     });
     navigator.mediaSession.setActionHandler("previoustrack", async () => {
       if (dabeiPlayer.mode === "playlist") {
-        dabeiPlayer.index = (dabeiPlayer.index - 1 + DABEI.length) % DABEI.length;
-        dabeiPlayer.applyTrack(dabeiPlayer.current(), { loop: false });
-        try {
-          await $dabeiAudio.play();
-          dabeiPlayer.playing = true;
-          dabeiPlayer.updateUI();
-          dabeiPlayer.updateMediaSession();
-        } catch (_) {}
+        if (dabeiPlayer.ending) return;
+        dabeiPlayer.index = (dabeiPlayer.index - 2 + DABEI.length) % DABEI.length;
+        await dabeiPlayer.advancePlaylist();
       } else {
-        $dabeiAudio.currentTime = 0;
+        dabeiPlayer.activeEl().currentTime = 0;
         dabeiPlayer.syncScrubber();
       }
     });
@@ -1091,11 +1181,11 @@ function wireAudio() {
       $npTitle.textContent = a.dataset.title || "";
     });
     a.addEventListener("pause", () => {
-      const anyPlaying = Array.from(audios).some(o => !o.paused) || (dabeiPlayer.playing && !$dabeiAudio.paused);
+      const anyPlaying = Array.from(audios).some(o => !o.paused) || (dabeiPlayer.playing && !dabeiPlayer.activeEl().paused);
       if (!anyPlaying) $np.classList.remove("show");
     });
     a.addEventListener("ended", () => {
-      const anyPlaying = Array.from(audios).some(o => !o.paused) || (dabeiPlayer.playing && !$dabeiAudio.paused);
+      const anyPlaying = Array.from(audios).some(o => !o.paused) || (dabeiPlayer.playing && !dabeiPlayer.activeEl().paused);
       if (!anyPlaying) $np.classList.remove("show");
     });
   });
