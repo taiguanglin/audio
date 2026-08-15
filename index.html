@@ -229,8 +229,8 @@
     border-bottom: 1px solid var(--border);
   }
   .dabei-controls {
-    display: grid;
-    grid-template-columns: auto auto 1fr;
+    display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 10px;
     margin: 0 16px;
@@ -258,7 +258,8 @@
     min-width: 9.5em;
   }
   .dabei-seek {
-    width: 100%;
+    flex: 1 1 160px;
+    min-width: 120px;
     accent-color: var(--accent);
     height: 28px;
     cursor: pointer;
@@ -267,6 +268,25 @@
   .dabei-seek:disabled {
     opacity: 0.45;
     cursor: not-allowed;
+  }
+  .dabei-vol {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 1 140px;
+    min-width: 90px;
+    cursor: pointer;
+  }
+  .dabei-vol-icon {
+    flex: 0 0 auto;
+    color: var(--muted);
+  }
+  .dabei-volume {
+    flex: 1;
+    min-width: 60px;
+    accent-color: var(--accent);
+    height: 28px;
+    cursor: pointer;
   }
   .featured-status {
     margin: 8px 16px 0;
@@ -335,6 +355,14 @@
       <button type="button" class="dabei-play" id="dabeiPlayBtn" aria-label="播放或暫停" disabled>▶</button>
       <span class="dabei-time" id="dabeiTime">0:00 / 0:00</span>
       <input class="dabei-seek" id="dabeiSeek" type="range" min="0" max="1000" value="0" step="1" disabled aria-label="播放進度" />
+      <label class="dabei-vol" title="音量">
+        <svg class="dabei-vol-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+          <path d="M3 9v6h4l5 5V4L7 9H3z" />
+          <path id="dabeiVolWave" d="M16.5 12a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4z" />
+          <path id="dabeiVolMuted" d="M17.5 9.5l5 5m0-5l-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none" style="display:none" />
+        </svg>
+        <input class="dabei-volume" id="dabeiVolume" type="range" min="0" max="1" step="0.01" value="1" aria-label="音量" />
+      </label>
     </div>
     <div class="featured-status" id="dabeiStatus">選擇上方模式開始播放</div>
   </div>
@@ -683,6 +711,37 @@ const $btnLoopNormal = document.getElementById("btnLoopNormal");
 const $btnLoopFast = document.getElementById("btnLoopFast");
 const $btnLoopPlaylist = document.getElementById("btnLoopPlaylist");
 const $btnDabeiStop = document.getElementById("btnDabeiStop");
+const $dabeiVolume = document.getElementById("dabeiVolume");
+const $dabeiVolWave = document.getElementById("dabeiVolWave");
+const $dabeiVolMuted = document.getElementById("dabeiVolMuted");
+
+// --- 大悲咒音量（可調整，記住上次設定）---
+const DABEI_VOLUME_KEY = "dabeiVolume";
+function applyDabeiVolume(v) {
+  v = Math.min(Math.max(Number(v) || 0, 0), 1);
+  $dabeiAudio.volume = v;
+  $dabeiAudioB.volume = v;
+  const muted = v <= 0.001;
+  $dabeiVolWave.style.display = muted ? "none" : "";
+  $dabeiVolMuted.style.display = muted ? "" : "none";
+}
+(function initDabeiVolume() {
+  let saved = 1; // 預設最大音量
+  try {
+    const raw = localStorage.getItem(DABEI_VOLUME_KEY);
+    if (raw !== null) {
+      const n = Number(raw);
+      if (Number.isFinite(n)) saved = n;
+    }
+  } catch (_) {}
+  saved = Math.min(Math.max(saved, 0), 1);
+  $dabeiVolume.value = String(saved);
+  applyDabeiVolume(saved);
+})();
+$dabeiVolume.addEventListener("input", () => {
+  applyDabeiVolume($dabeiVolume.value);
+  try { localStorage.setItem(DABEI_VOLUME_KEY, $dabeiVolume.value); } catch (_) {}
+});
 
 let sortDir = "desc"; // desc = newest first
 
