@@ -3,40 +3,26 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Tai 師父答疑音檔串流</title>
+<title>Tai 師父音檔串流</title>
 <style>
   :root {
-    --bg: #0f1115;
-    --panel: #161a21;
-    --panel-2: #1c2230;
-    --border: #262d3a;
-    --text: #e8ecf3;
-    --muted: #9aa3b2;
-    --accent: #6aa6ff;
-    --accent-2: #8ed1ff;
-    --chip: #232a38;
-    --chip-active: #2f4673;
-    --danger: #ff6b6b;
-    --ok: #5ad19a;
-  }
-  @media (prefers-color-scheme: light) {
-    :root {
-      --bg: #f6f7fb;
-      --panel: #ffffff;
-      --panel-2: #f0f2f7;
-      --border: #e3e6ee;
-      --text: #1a1f2b;
-      --muted: #5b6577;
-      --accent: #2a6df4;
-      --accent-2: #1f4fbf;
-      --chip: #eef1f7;
-      --chip-active: #d6e3ff;
-    }
+    --bg: #fff5f8;
+    --panel: #ffffff;
+    --panel-2: #fdedf4;
+    --border: #f7d3e2;
+    --text: #3b1f2c;
+    --muted: #9a7186;
+    --accent: #d6336c;
+    --accent-2: #f06595;
+    --chip: #fce6ef;
+    --chip-active: #f9cadf;
+    --danger: #d6336c;
+    --ok: #a61e4d;
   }
   * { box-sizing: border-box; }
   html, body {
     margin: 0; padding: 0;
-    background: var(--bg);
+    background: linear-gradient(180deg, #ffeaf3 0, var(--bg) 320px);
     color: var(--text);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC",
                  "Microsoft JhengHei", "Noto Sans TC", Helvetica, Arial, sans-serif;
@@ -84,6 +70,26 @@
   .chip.active { background: var(--chip-active); border-color: var(--accent); }
   .chip:hover { filter: brightness(1.08); }
   .stats { color: var(--muted); font-size: 13px; margin-left: auto; }
+  .picker {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 4px 10px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .picker select {
+    background: transparent;
+    border: 0; outline: 0;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 600;
+    max-width: 62vw;
+    padding: 4px 2px;
+    cursor: pointer;
+  }
+  .picker select option { color: var(--text); background: var(--panel); }
 
   main { padding: 16px 0 140px; }
   .group {
@@ -125,10 +131,12 @@
     font-size: 11px; padding: 2px 8px; border-radius: 999px;
     background: var(--chip); color: var(--muted); border: 1px solid var(--border);
   }
-  .badge.gz { background: rgba(106,166,255,0.12); color: var(--accent); border-color: rgba(106,166,255,0.35); }
-  .badge.tb { background: rgba(90,209,154,0.12); color: var(--ok); border-color: rgba(90,209,154,0.35); }
-  .badge.wx { background: rgba(255,191,90,0.12); color: #ffbf5a; border-color: rgba(255,191,90,0.35); }
-  .badge.web { background: rgba(180,140,255,0.12); color: #b48cff; border-color: rgba(180,140,255,0.35); }
+  .badge.gz  { background: rgba(214,51,108,0.10); color: #c2255c; border-color: rgba(214,51,108,0.30); }
+  .badge.tb  { background: rgba(134,46,156,0.10); color: #862e9c; border-color: rgba(134,46,156,0.30); }
+  .badge.wx  { background: rgba(181,23,158,0.10); color: #b5179e; border-color: rgba(181,23,158,0.30); }
+  .badge.web { background: rgba(166,30,77,0.10); color: #a61e4d; border-color: rgba(166,30,77,0.30); }
+  .badge.jj  { background: rgba(224,49,90,0.10); color: #e0315a; border-color: rgba(224,49,90,0.30); }
+  .badge.yl  { background: rgba(156,54,181,0.10); color: #9c36b5; border-color: rgba(156,54,181,0.30); }
 
   audio {
     width: 100%;
@@ -296,10 +304,18 @@
     min-height: 1.5em;
   }
   .badge.dabei {
-    background: rgba(255,140,105,0.14);
-    color: #ff8c69;
-    border-color: rgba(255,140,105,0.4);
+    background: rgba(230,73,128,0.14);
+    color: #c2255c;
+    border-color: rgba(230,73,128,0.38);
   }
+  .back-home {
+    display: inline-block;
+    margin: 0 0 8px;
+    font-size: 12px;
+    color: var(--muted);
+    text-decoration: none;
+  }
+  .back-home:hover { color: var(--accent); }
 
   @media (min-width: 720px) {
     .item { grid-template-columns: minmax(0, 1fr) minmax(280px, 460px); align-items: center; gap: 16px; }
@@ -311,14 +327,19 @@
 
 <header>
   <div class="container">
-    <h1>Tai 師父答疑音檔串流</h1>
+    <a class="back-home" href="../index.html">← 回 TaiGuangLin 主站</a>
+    <h1>Tai 師父音檔串流</h1>
     <div class="sub">共 <span id="totalCount">0</span> 個音檔 · 點擊播放即時串流（無需下載）</div>
     <div class="toolbar">
+      <label class="picker" for="category">
+        <span>類別</span>
+        <select id="category" aria-label="選擇類別"></select>
+      </label>
       <div class="search">
-        <input id="search" type="search" placeholder="搜尋日期或關鍵字，例如：2025年3月、貼吧、公眾號" autocomplete="off" />
+        <input id="search" type="search" placeholder="搜尋日期或關鍵字，例如：2025年3月、楞伽經、義理" autocomplete="off" />
       </div>
-      <button class="chip active" id="sortNewest">最新優先</button>
-      <button class="chip" id="sortOldest">最舊優先</button>
+      <button class="chip active" id="sortOldest">舊→新</button>
+      <button class="chip" id="sortNewest">新→舊</button>
       <div class="stats" id="stats"></div>
     </div>
   </div>
@@ -381,12 +402,14 @@
 
 <div class="footer-note container">
   提示：本頁為靜態網頁，音檔以 HTML5 原生播放器串流播放 <code>*.opus</code>。
+  上方「類別」可依答疑／講經／義理系列篩選，並可搭配搜尋與日期排序。
   請用 <code>python3 serve.py</code> 啟動（需支援 HTTP Range，否則拖曳進度條會卡住）。
   若使用 Safari 無法播放 <code>.opus</code>，請改用 Chrome、Edge 或 Firefox。
   大悲咒循環播放時，關掉螢幕後仍會繼續；若系統省電殺死後台，請把瀏覽器加入不受限／允許背景活動。
 </div>
 
 <script>
+// built by tool/audio_index/build_index.py · 2026-09-13 · 426 files
 // === 大悲咒（置頂，支援關螢幕循環）===
 // duration 為檔案真實長度（秒）；Ogg/Opus 在瀏覽器拖到結尾時 duration 會膨脹，故鎖定此值
 const DABEI = [
@@ -409,262 +432,523 @@ function absoluteArtwork() {
   }));
 }
 
-// === 檔案清單（與同層 .opus 音檔對應）===
+// === 檔案清單 ===
+// 由 tool/audio_index/build_index.py 掃描 audio/ 實際內容產生；build 時下列兩段會被整段覆寫：
+//   CATEGORIES = { <cat>: { label, cls, group, order } }
+//   FILES      = [{ path, cat }, ...]   （path 為相對 audio/ 的路徑，可含子資料夾）
+const CATEGORIES = {
+  "dayi": {
+    "label": "答疑",
+    "cls": "gz",
+    "group": "答疑",
+    "order": 1
+  },
+  "tieba": {
+    "label": "貼吧答疑",
+    "cls": "tb",
+    "group": "答疑",
+    "order": 2
+  },
+  "weixin": {
+    "label": "微信公眾號答疑",
+    "cls": "wx",
+    "group": "答疑",
+    "order": 3
+  },
+  "guanwang": {
+    "label": "官網答疑",
+    "cls": "web",
+    "group": "答疑",
+    "order": 4
+  },
+  "lengqie": {
+    "label": "楞伽經",
+    "cls": "jj",
+    "group": "講經",
+    "order": 10
+  },
+  "liuzu": {
+    "label": "六祖壇經",
+    "cls": "jj",
+    "group": "講經",
+    "order": 11
+  },
+  "lengyan": {
+    "label": "楞嚴經",
+    "cls": "jj",
+    "group": "講經",
+    "order": 12
+  },
+  "sishier": {
+    "label": "四十二章經",
+    "cls": "jj",
+    "group": "講經",
+    "order": 13
+  },
+  "ganen": {
+    "label": "感恩與講經",
+    "cls": "jj",
+    "group": "講經",
+    "order": 14
+  },
+  "yuanjue": {
+    "label": "圓覺經",
+    "cls": "jj",
+    "group": "講經",
+    "order": 15
+  },
+  "jingang": {
+    "label": "金剛經",
+    "cls": "jj",
+    "group": "講經",
+    "order": 16
+  },
+  "xinjing": {
+    "label": "心經",
+    "cls": "jj",
+    "group": "講經",
+    "order": 17
+  },
+  "yili": {
+    "label": "義理",
+    "cls": "yl",
+    "group": "義理",
+    "order": 20
+  },
+  "other": {
+    "label": "其他",
+    "cls": "gz",
+    "group": "其他",
+    "order": 99
+  }
+};
 const FILES = [
-  "2024年11月11日Tai師父答疑.opus",
-  "2024年11月12日Tai師父答疑.opus",
-  "2024年11月13日Tai師父答疑.opus",
-  "2024年11月14日Tai師父答疑.opus",
-  "2024年11月15日Tai師父答疑.opus",
-  "2024年11月16日Tai師父答疑.opus",
-  "2024年12月10日Tai師父公眾號答疑.opus",
-  "2024年12月10日Tai師父貼吧答疑.opus",
-  "2024年12月11日Tai師父公眾號答疑.opus",
-  "2024年12月11日Tai師父貼吧答疑.opus",
-  "2024年12月12日Tai師父公眾號答疑.opus",
-  "2024年12月12日Tai師父貼吧答疑.opus",
-  "2024年12月13日Tai師父公眾號答疑.opus",
-  "2024年12月13日Tai師父貼吧答疑.opus",
-  "2024年12月14日Tai師父公眾號答疑.opus",
-  "2024年12月14日Tai師父貼吧答疑.opus",
-  "2024年12月9日Tai師父公眾號答疑（上）.opus",
-  "2024年12月9日Tai師父公眾號答疑（下）.opus",
-  "2024年12月9日Tai師父貼吧答疑.opus",
-  "2024年2月11日Tai師父答疑.opus",
-  "2024年2月12日Tai師父答疑.opus",
-  "2024年2月13日Tai師父答疑.opus",
-  "2024年2月14日Tai師父答疑.opus",
-  "2024年2月15日Tai師父答疑.opus",
-  "2024年2月17日Tai師父答疑.opus",
-  "2024年2月18日Tai師父答疑.opus",
-  "2024年2月19日Tai師父答疑.opus",
-  "2024年2月20日Tai師父答疑.opus",
-  "2024年2月21日Tai師父答疑.opus",
-  "2024年2月22日Tai師父答疑.opus",
-  "2024年2月23日Tai師父答疑.opus",
-  "2024年2月25日Tai師父答疑.opus",
-  "2024年2月26日Tai師父答疑.opus",
-  "2024年2月27日Tai師父答疑.opus",
-  "2024年2月28日Tai師父答疑.opus",
-  "2024年2月29日Tai師父答疑.opus",
-  "2024年3月01日Tai師父答疑.opus",
-  "2024年3月02日Tai師父答疑.opus",
-  "2024年3月03日Tai師父答疑.opus",
-  "2024年3月05日Tai師父答疑.opus",
-  "2024年3月06日Tai師父答疑.opus",
-  "2024年3月07日Tai師父答疑.opus",
-  "2024年3月08日Tai師父答疑.opus",
-  "2024年3月09日Tai師父答疑.opus",
-  "2024年3月11日Tai師父答疑.opus",
-  "2024年3月12日Tai師父答疑.opus",
-  "2024年3月13日Tai師父答疑.opus",
-  "2024年3月14日Tai師父答疑.opus",
-  "2024年3月15日Tai師父答疑.opus",
-  "2024年3月16日Tai師父答疑.opus",
-  "2024年3月18日Tai師父答疑.opus",
-  "2024年3月19日Tai師父答疑.opus",
-  "2024年3月20日Tai師父答疑.opus",
-  "2024年3月21日Tai師父答疑.opus",
-  "2024年3月22日Tai師父答疑.opus",
-  "2024年3月23日Tai師父答疑.opus",
-  "2024年3月26日Tai師父答疑.opus",
-  "2024年3月27日Tai師父答疑.opus",
-  "2024年3月28日Tai師父答疑.opus",
-  "2024年3月29日Tai師父答疑.opus",
-  "2024年3月30日Tai師父答疑.opus",
-  "2024年4月08日Tai師父答疑.opus",
-  "2024年4月22日Tai師父答疑.opus",
-  "2024年4月23日Tai師父答疑.opus",
-  "2024年4月24日Tai師父答疑.opus",
-  "2024年4月25日Tai師父答疑.opus",
-  "2024年4月26日Tai師父答疑.opus",
-  "2024年4月27日Tai師父答疑.opus",
-  "2024年5月20日Tai師父答疑.opus",
-  "2024年5月21日Tai師父答疑.opus",
-  "2024年5月22日Tai師父答疑.opus",
-  "2024年5月23日Tai師父答疑.opus",
-  "2024年5月24日Tai師父答疑.opus",
-  "2024年5月25日Tai師父答疑.opus",
-  "2024年6月17日Tai師父答疑.opus",
-  "2024年6月18日Tai師父答疑.opus",
-  "2024年6月19日Tai師父答疑.opus",
-  "2024年6月20日Tai師父答疑.opus",
-  "2024年6月21日Tai師父答疑.opus",
-  "2024年6月22日Tai師父答疑.opus",
-  "2024年7月15日Tai師父答疑.opus",
-  "2024年7月16日Tai師父答疑.opus",
-  "2024年7月17日Tai師父答疑.opus",
-  "2024年7月18日Tai師父答疑.opus",
-  "2024年7月19日Tai師父答疑.opus",
-  "2024年7月20日Tai師父答疑.opus",
-  "2024年8月12日Tai師父答疑.opus",
-  "2024年8月13日Tai師父答疑.opus",
-  "2024年8月14日Tai師父答疑.opus",
-  "2024年8月15日Tai師父答疑.opus",
-  "2024年8月16日Tai師父答疑.opus",
-  "2024年8月17日Tai師父答疑.opus",
-  "2024年9月10日Tai師父答疑.opus",
-  "2024年9月11日Tai師父答疑.opus",
-  "2024年9月12日Tai師父答疑.opus",
-  "2024年9月13日Tai師父答疑.opus",
-  "2024年9月14日Tai師父答疑.opus",
-  "2024年9月9日Tai師父答疑.opus",
-  "2025年11月10日Tai師父官網答疑.opus",
-  "2025年11月10日Tai師父微信公眾號答疑.opus",
-  "2025年11月11日Tai師父官網答疑.opus",
-  "2025年11月11日Tai師父微信公眾號答疑.opus",
-  "2025年11月12日Tai師父官網答疑.opus",
-  "2025年11月12日Tai師父微信公眾號答疑.opus",
-  "2025年11月13日Tai師父官網答疑.opus",
-  "2025年11月13日Tai師父微信公眾號答疑.opus",
-  "2025年11月14日Tai師父官網答疑.opus",
-  "2025年11月14日Tai師父微信公眾號答疑.opus",
-  "2025年11月15日Tai師父官網答疑.opus",
-  "2025年11月15日Tai師父微信公眾號答疑.opus",
-  "2025年12月10日Tai師父官網答疑.opus",
-  "2025年12月10日Tai師父微信公眾號答疑.opus",
-  "2025年12月11日Tai師父官網答疑.opus",
-  "2025年12月11日Tai師父微信公眾號答疑.opus",
-  "2025年12月12日Tai師父官網答疑.opus",
-  "2025年12月12日Tai師父微信公眾號答疑.opus",
-  "2025年12月13日Tai師父官網答疑.opus",
-  "2025年12月13日Tai師父微信公眾號答疑.opus",
-  "2025年12月8日Tai師父官網答疑.opus",
-  "2025年12月8日Tai師父微信公眾號答疑.opus",
-  "2025年12月9日Tai師父官網答疑.opus",
-  "2025年12月9日Tai師父微信公眾號答疑.opus",
-  "2025年1月13日Tai師父微信公眾號答疑.opus",
-  "2025年1月13日Tai師父貼吧答疑.opus",
-  "2025年1月14日Tai師父微信公眾號答疑.opus",
-  "2025年1月14日Tai師父貼吧答疑.opus",
-  "2025年1月15日Tai師父微信公眾號答疑.opus",
-  "2025年1月15日Tai師父貼吧答疑.opus",
-  "2025年1月16日Tai師父微信公眾號答疑.opus",
-  "2025年1月16日Tai師父貼吧答疑.opus",
-  "2025年1月17日Tai師父微信公眾號答疑 .opus",
-  "2025年1月17日Tai師父貼吧答疑 .opus",
-  "2025年1月18日Tai師父微信公眾號答疑.opus",
-  "2025年1月18日Tai師父貼吧答疑.opus",
-  "2025年2月10日Tai師父微信公眾號答疑.opus",
-  "2025年2月10日Tai師父貼吧答疑.opus",
-  "2025年2月11日Tai師父微信公眾號答疑.opus",
-  "2025年2月11日Tai師父貼吧答疑.opus",
-  "2025年2月12日Tai師父微信公眾號答疑.opus",
-  "2025年2月12日Tai師父貼吧答疑.opus",
-  "2025年2月13日Tai師父微信公眾號答疑.opus",
-  "2025年2月13日Tai師父貼吧答疑.opus",
-  "2025年2月14日Tai師父微信公眾號答疑.opus",
-  "2025年2月14日Tai師父貼吧答疑.opus",
-  "2025年2月15日Tai師父微信公眾號答疑.opus",
-  "2025年2月15日Tai師父貼吧答疑.opus",
-  "2025年3月10日Tai師父微信公眾號答疑.opus",
-  "2025年3月10日Tai師父貼吧答疑.opus",
-  "2025年3月11日Tai師父微信公眾號答疑.opus",
-  "2025年3月11日Tai師父貼吧答疑.opus",
-  "2025年3月12日Tai師父微信公眾號答疑.opus",
-  "2025年3月12日Tai師父貼吧答疑.opus",
-  "2025年3月13日Tai師父微信公眾號答疑.opus",
-  "2025年3月13日Tai師父貼吧答疑.opus",
-  "2025年3月14日Tai師父微信公眾號答疑.opus",
-  "2025年3月14日Tai師父貼吧答疑.opus",
-  "2025年3月15日Tai師父微信公眾號答疑.opus",
-  "2025年3月15日Tai師父貼吧答疑.opus",
-  "2025年5月12日Tai師父微信公眾號答疑.opus",
-  "2025年5月12日Tai師父貼吧答疑.opus",
-  "2025年5月13日Tai師父微信公眾號答疑.opus",
-  "2025年5月13日Tai師父貼吧答疑.opus",
-  "2025年5月14日Tai師父微信公眾號答疑.opus",
-  "2025年5月14日Tai師父貼吧答疑.opus",
-  "2025年5月15日Tai師父微信公眾號答疑.opus",
-  "2025年5月15日Tai師父貼吧答疑.opus",
-  "2025年5月16日Tai師父微信公眾號答疑.opus",
-  "2025年5月16日Tai師父貼吧答疑.opus",
-  "2025年5月17日Tai師父微信公眾號答疑.opus",
-  "2025年5月17日Tai師父貼吧答疑.opus",
-  "2025年6月10日Tai師父微信公眾號答疑.opus",
-  "2025年6月10日Tai師父貼吧答疑.opus",
-  "2025年6月11日Tai師父微信公眾號答疑.opus",
-  "2025年6月11日Tai師父貼吧答疑.opus",
-  "2025年6月12日Tai師父微信公眾號答疑.opus",
-  "2025年6月12日Tai師父貼吧答疑.opus",
-  "2025年6月13日Tai師父微信公眾號答疑.opus",
-  "2025年6月13日Tai師父貼吧答疑.opus",
-  "2025年6月14日Tai師父微信公眾號答疑.opus",
-  "2025年6月14日Tai師父貼吧答疑.opus",
-  "2025年6月9日Tai師父微信公眾號答疑.opus",
-  "2025年6月9日Tai師父貼吧答疑.opus",
-  "2025年7月10日Tai師父微信公眾號答疑.opus",
-  "2025年7月10日Tai師父貼吧答疑.opus",
-  "2025年7月11日Tai師父微信公眾號答疑.opus",
-  "2025年7月11日Tai師父貼吧答疑.opus",
-  "2025年7月12日Tai師父微信公眾號答疑.opus",
-  "2025年7月12日Tai師父貼吧答疑.opus",
-  "2025年7月7日Tai師父微信公眾號答疑.opus",
-  "2025年7月7日Tai師父貼吧答疑.opus",
-  "2025年7月8日Tai師父微信公眾號答疑.opus",
-  "2025年7月8日Tai師父貼吧答疑.opus",
-  "2025年7月9日Tai師父微信公眾號答疑.opus",
-  "2025年7月9日Tai師父貼吧答疑.opus",
-  "2025年8月4日Tai師父微信公眾號答疑.opus",
-  "2025年8月4日Tai師父貼吧答疑.opus",
-  "2025年8月5日Tai師父微信公眾號答疑.opus",
-  "2025年8月5日Tai師父貼吧答疑.opus",
-  "2025年8月6日Tai師父微信公眾號答疑.opus",
-  "2025年8月6日Tai師父貼吧答疑.opus",
-  "2025年8月7日Tai師父微信公眾號答疑.opus",
-  "2025年8月7日Tai師父貼吧答疑.opus",
-  "2025年8月8日Tai師父微信公眾號答疑.opus",
-  "2025年8月8日Tai師父貼吧答疑.opus",
-  "2025年8月9日Tai師父微信公眾號答疑.opus",
-  "2025年8月9日Tai師父貼吧答疑.opus",
-  "2025年9月1日Tai師父微信公眾號答疑.opus",
-  "2025年9月1日Tai師父貼吧答疑.opus",
-  "2025年9月2日Tai師父微信公眾號答疑.opus",
-  "2025年9月2日Tai師父貼吧答疑.opus",
-  "2025年9月3日Tai師父微信公眾號答疑.opus",
-  "2025年9月3日Tai師父貼吧答疑.opus",
-  "2025年9月4日Tai師父微信公眾號答疑.opus",
-  "2025年9月4日Tai師父貼吧答疑.opus",
-  "2025年9月5日Tai師父微信公眾號答疑.opus",
-  "2025年9月5日Tai師父貼吧答疑.opus",
-  "2025年9月6日Tai師父微信公眾號答疑.opus",
-  "2025年9月6日Tai師父貼吧答疑.opus",
-  "2026年1月10日Tai師父官網答疑.opus",
-  "2026年1月10日Tai師父微信公眾號答疑.opus",
-  "2026年1月5日Tai師父官網答疑.opus",
-  "2026年1月5日Tai師父微信公眾號答疑.opus",
-  "2026年1月6日Tai師父官網答疑.opus",
-  "2026年1月6日Tai師父微信公眾號答疑.opus",
-  "2026年1月7日Tai師父官網答疑.opus",
-  "2026年1月7日Tai師父微信公眾號答疑.opus",
-  "2026年1月8日Tai師父官網答疑.opus",
-  "2026年1月8日Tai師父微信公眾號答疑.opus",
-  "2026年1月9日Tai師父官網答疑.opus",
-  "2026年1月9日Tai師父微信公眾號答疑.opus",
-  "2026年2月2日Tai師父官網答疑.opus",
-  "2026年2月2日Tai師父微信公眾號答疑.opus",
-  "2026年2月3日Tai師父官網答疑.opus",
-  "2026年2月3日Tai師父微信公眾號答疑.opus",
-  "2026年2月4日Tai師父官網答疑.opus",
-  "2026年2月4日Tai師父微信公眾號答疑.opus",
-  "2026年2月5日Tai師父官網答疑.opus",
-  "2026年2月5日Tai師父微信公眾號答疑.opus",
-  "2026年2月6日Tai師父官網答疑.opus",
-  "2026年2月6日Tai師父微信公眾號答疑.opus",
-  "2026年2月7日Tai師父官網答疑.opus",
-  "2026年2月7日Tai師父微信公眾號答疑.opus",
-  "2026年3月2日Tai師父官網答疑.opus",
-  "2026年3月2日Tai師父微信公眾號答疑.opus",
-  "2026年3月3日Tai師父官網答疑.opus",
-  "2026年3月3日Tai師父微信公眾號答疑.opus",
-  "2026年3月4日Tai師父官網答疑.opus",
-  "2026年3月4日Tai師父微信公眾號答疑.opus",
-  "2026年3月5日Tai師父官網答疑.opus",
-  "2026年3月5日Tai師父微信公眾號答疑.opus",
-  "2026年3月6日Tai師父官網答疑.opus",
-  "2026年3月6日Tai師父微信公眾號答疑.opus",
-  "2026年3月7日Tai師父官網答疑.opus",
-  "2026年3月7日Tai師父微信公眾號答疑.opus"
+  {"path": "2024年11月11日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年11月12日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年11月13日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年11月14日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年11月15日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年11月16日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年12月10日Tai師父公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2024年12月10日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2024年12月11日Tai師父公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2024年12月11日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2024年12月12日Tai師父公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2024年12月12日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2024年12月13日Tai師父公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2024年12月13日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2024年12月14日Tai師父公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2024年12月14日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2024年12月9日Tai師父公眾號答疑（上）.opus", "cat": "weixin"},
+  {"path": "2024年12月9日Tai師父公眾號答疑（下）.opus", "cat": "weixin"},
+  {"path": "2024年12月9日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2024年2月11日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年2月12日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年2月13日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年2月14日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年2月15日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年2月17日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年2月18日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年2月19日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年2月20日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年2月21日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年2月22日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年2月23日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年2月25日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年2月26日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年2月27日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年2月28日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年2月29日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年3月01日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年3月02日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年3月03日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年3月05日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年3月06日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年3月07日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年3月08日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年3月09日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年3月11日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年3月12日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年3月13日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年3月14日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年3月15日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年3月16日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年3月18日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年3月19日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年3月20日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年3月21日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年3月22日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年3月23日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年3月26日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年3月27日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年3月28日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年3月29日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年3月30日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年4月08日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年4月22日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年4月23日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年4月24日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年4月25日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年4月26日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年4月27日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年5月20日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年5月21日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年5月22日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年5月23日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年5月24日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年5月25日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年6月17日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年6月18日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年6月19日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年6月20日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年6月21日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年6月22日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年7月15日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年7月16日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年7月17日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年7月18日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年7月19日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年7月20日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年8月12日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年8月13日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年8月14日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年8月15日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年8月16日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年8月17日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年9月10日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年9月11日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年9月12日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年9月13日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年9月14日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2024年9月9日Tai師父答疑.opus", "cat": "dayi"},
+  {"path": "2025年11月10日Tai師父官網答疑.opus", "cat": "guanwang"},
+  {"path": "2025年11月10日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年11月11日Tai師父官網答疑.opus", "cat": "guanwang"},
+  {"path": "2025年11月11日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年11月12日Tai師父官網答疑.opus", "cat": "guanwang"},
+  {"path": "2025年11月12日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年11月13日Tai師父官網答疑.opus", "cat": "guanwang"},
+  {"path": "2025年11月13日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年11月14日Tai師父官網答疑.opus", "cat": "guanwang"},
+  {"path": "2025年11月14日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年11月15日Tai師父官網答疑.opus", "cat": "guanwang"},
+  {"path": "2025年11月15日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年12月10日Tai師父官網答疑.opus", "cat": "guanwang"},
+  {"path": "2025年12月10日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年12月11日Tai師父官網答疑.opus", "cat": "guanwang"},
+  {"path": "2025年12月11日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年12月12日Tai師父官網答疑.opus", "cat": "guanwang"},
+  {"path": "2025年12月12日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年12月13日Tai師父官網答疑.opus", "cat": "guanwang"},
+  {"path": "2025年12月13日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年12月8日Tai師父官網答疑.opus", "cat": "guanwang"},
+  {"path": "2025年12月8日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年12月9日Tai師父官網答疑.opus", "cat": "guanwang"},
+  {"path": "2025年12月9日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年1月13日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年1月13日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年1月14日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年1月14日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年1月15日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年1月15日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年1月16日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年1月16日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年1月17日Tai師父微信公眾號答疑 .opus", "cat": "weixin"},
+  {"path": "2025年1月17日Tai師父貼吧答疑 .opus", "cat": "tieba"},
+  {"path": "2025年1月18日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年1月18日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年2月10日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年2月10日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年2月11日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年2月11日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年2月12日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年2月12日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年2月13日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年2月13日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年2月14日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年2月14日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年2月15日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年2月15日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年3月10日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年3月10日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年3月11日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年3月11日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年3月12日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年3月12日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年3月13日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年3月13日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年3月14日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年3月14日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年3月15日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年3月15日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年5月12日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年5月12日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年5月13日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年5月13日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年5月14日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年5月14日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年5月15日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年5月15日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年5月16日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年5月16日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年5月17日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年5月17日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年6月10日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年6月10日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年6月11日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年6月11日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年6月12日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年6月12日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年6月13日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年6月13日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年6月14日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年6月14日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年6月9日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年6月9日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年7月10日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年7月10日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年7月11日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年7月11日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年7月12日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年7月12日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年7月7日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年7月7日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年7月8日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年7月8日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年7月9日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年7月9日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年8月4日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年8月4日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年8月5日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年8月5日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年8月6日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年8月6日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年8月7日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年8月7日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年8月8日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年8月8日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年8月9日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年8月9日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年9月1日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年9月1日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年9月2日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年9月2日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年9月3日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年9月3日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年9月4日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年9月4日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年9月5日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年9月5日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2025年9月6日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2025年9月6日Tai師父貼吧答疑.opus", "cat": "tieba"},
+  {"path": "2026年1月10日Tai師父官網答疑.opus", "cat": "guanwang"},
+  {"path": "2026年1月10日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2026年1月5日Tai師父官網答疑.opus", "cat": "guanwang"},
+  {"path": "2026年1月5日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2026年1月6日Tai師父官網答疑.opus", "cat": "guanwang"},
+  {"path": "2026年1月6日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2026年1月7日Tai師父官網答疑.opus", "cat": "guanwang"},
+  {"path": "2026年1月7日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2026年1月8日Tai師父官網答疑.opus", "cat": "guanwang"},
+  {"path": "2026年1月8日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2026年1月9日Tai師父官網答疑.opus", "cat": "guanwang"},
+  {"path": "2026年1月9日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2026年2月2日Tai師父官網答疑.opus", "cat": "guanwang"},
+  {"path": "2026年2月2日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2026年2月3日Tai師父官網答疑.opus", "cat": "guanwang"},
+  {"path": "2026年2月3日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2026年2月4日Tai師父官網答疑.opus", "cat": "guanwang"},
+  {"path": "2026年2月4日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2026年2月5日Tai師父官網答疑.opus", "cat": "guanwang"},
+  {"path": "2026年2月5日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2026年2月6日Tai師父官網答疑.opus", "cat": "guanwang"},
+  {"path": "2026年2月6日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2026年2月7日Tai師父官網答疑.opus", "cat": "guanwang"},
+  {"path": "2026年2月7日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2026年3月2日Tai師父官網答疑.opus", "cat": "guanwang"},
+  {"path": "2026年3月2日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2026年3月3日Tai師父官網答疑.opus", "cat": "guanwang"},
+  {"path": "2026年3月3日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2026年3月4日Tai師父官網答疑.opus", "cat": "guanwang"},
+  {"path": "2026年3月4日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2026年3月5日Tai師父官網答疑.opus", "cat": "guanwang"},
+  {"path": "2026年3月5日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2026年3月6日Tai師父官網答疑.opus", "cat": "guanwang"},
+  {"path": "2026年3月6日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "2026年3月7日Tai師父官網答疑.opus", "cat": "guanwang"},
+  {"path": "2026年3月7日Tai師父微信公眾號答疑.opus", "cat": "weixin"},
+  {"path": "jiangjing/2024年11月11日Tai师父讲经·楞伽经(1).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2024年11月12日Tai师父讲经·楞伽经(2).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2024年11月13日Tai师父讲经·楞伽经(3).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2024年11月14日Tai师父讲经·楞伽经(4).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2024年11月15日Tai师父讲经·楞伽经(5).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2024年11月16日Tai师父讲经·楞伽经(6).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2024年12月10日Tai师父讲经·楞伽经(8).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2024年12月11日Tai师父讲经·楞伽经(9).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2024年12月12日Tai师父讲经·楞伽经(10).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2024年12月13日Tai师父讲经·楞伽经(11).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2024年12月14日Tai师父讲经·楞伽经(12).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2024年12月9日Tai师父讲经·楞伽经(7).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2024年4月14日Tai师父讲经·心经(1).opus", "cat": "xinjing"},
+  {"path": "jiangjing/2024年4月14日Tai师父讲经·心经(2).opus", "cat": "xinjing"},
+  {"path": "jiangjing/2024年4月14日Tai师父讲经·感恩与讲经(1).opus", "cat": "ganen"},
+  {"path": "jiangjing/2024年4月16日Tai师父讲经·金刚经(1).opus", "cat": "jingang"},
+  {"path": "jiangjing/2024年4月17日Tai师父讲经·金刚经(2).opus", "cat": "jingang"},
+  {"path": "jiangjing/2024年4月22日Tai师父讲经·金刚经(3).opus", "cat": "jingang"},
+  {"path": "jiangjing/2024年5月07日Tai师父讲经·金刚经(4).opus", "cat": "jingang"},
+  {"path": "jiangjing/2024年5月12日Tai师父讲经·金刚经(5).opus", "cat": "jingang"},
+  {"path": "jiangjing/2024年5月12日Tai师父讲经·金刚经(6).opus", "cat": "jingang"},
+  {"path": "jiangjing/2024年5月15日Tai师父讲经·金刚经(7).opus", "cat": "jingang"},
+  {"path": "jiangjing/2024年5月16日Tai师父讲经·金刚经(8).opus", "cat": "jingang"},
+  {"path": "jiangjing/2024年5月17日Tai师父讲经·金刚经(9).opus", "cat": "jingang"},
+  {"path": "jiangjing/2024年5月21日Tai师父讲经·圆觉经(1).opus", "cat": "yuanjue"},
+  {"path": "jiangjing/2024年5月23日Tai师父讲经·圆觉经(2).opus", "cat": "yuanjue"},
+  {"path": "jiangjing/2024年5月24日Tai师父讲经·圆觉经(3).opus", "cat": "yuanjue"},
+  {"path": "jiangjing/2024年5月25日Tai师父讲经·圆觉经(4).opus", "cat": "yuanjue"},
+  {"path": "jiangjing/2024年5月26日Tai师父讲经·圆觉经(5).opus", "cat": "yuanjue"},
+  {"path": "jiangjing/2024年5月26日Tai师父讲经·圆觉经(6).opus", "cat": "yuanjue"},
+  {"path": "jiangjing/2024年5月26日Tai师父讲经·圆觉经(7).opus", "cat": "yuanjue"},
+  {"path": "jiangjing/2024年5月27日Tai师父讲经·圆觉经(8).opus", "cat": "yuanjue"},
+  {"path": "jiangjing/2024年5月28日Tai师父讲经·圆觉经(9).opus", "cat": "yuanjue"},
+  {"path": "jiangjing/2024年5月29日Tai师父讲经·圆觉经(10).opus", "cat": "yuanjue"},
+  {"path": "jiangjing/2024年5月29日Tai师父讲经·圆觉经(11).opus", "cat": "yuanjue"},
+  {"path": "jiangjing/2024年5月29日Tai师父讲经·圆觉经(12).opus", "cat": "yuanjue"},
+  {"path": "jiangjing/2024年8月10日Tai师父讲经·四十二章经(3).opus", "cat": "sishier"},
+  {"path": "jiangjing/2024年8月10日Tai师父讲经·四十二章经(4).opus", "cat": "sishier"},
+  {"path": "jiangjing/2024年8月11日Tai师父讲经·四十二章经(5).opus", "cat": "sishier"},
+  {"path": "jiangjing/2024年8月12日Tai师父讲经·四十二章经(6).opus", "cat": "sishier"},
+  {"path": "jiangjing/2024年8月24日Tai师父讲经·四十二章经(7).opus", "cat": "sishier"},
+  {"path": "jiangjing/2024年8月24日Tai师父讲经·四十二章经(8).opus", "cat": "sishier"},
+  {"path": "jiangjing/2024年8月25日Tai师父讲经·四十二章经(10).opus", "cat": "sishier"},
+  {"path": "jiangjing/2024年8月25日Tai师父讲经·四十二章经(9).opus", "cat": "sishier"},
+  {"path": "jiangjing/2024年8月27日Tai师父讲经·四十二章经(11).opus", "cat": "sishier"},
+  {"path": "jiangjing/2024年8月27日Tai师父讲经·四十二章经(12).opus", "cat": "sishier"},
+  {"path": "jiangjing/2024年8月31日Tai师父讲经·四十二章经(13).opus", "cat": "sishier"},
+  {"path": "jiangjing/2024年8月31日Tai师父讲经·四十二章经(14).opus", "cat": "sishier"},
+  {"path": "jiangjing/2024年8月9日Tai师父讲经·四十二章经(1).opus", "cat": "sishier"},
+  {"path": "jiangjing/2024年8月9日Tai师父讲经·四十二章经(2).opus", "cat": "sishier"},
+  {"path": "jiangjing/2025年11月10日Tai师父讲经·六祖坛经(19).opus", "cat": "liuzu"},
+  {"path": "jiangjing/2025年11月11日Tai师父讲经·六祖坛经(20).opus", "cat": "liuzu"},
+  {"path": "jiangjing/2025年11月12日Tai师父讲经·六祖坛经(21).opus", "cat": "liuzu"},
+  {"path": "jiangjing/2025年11月13日Tai师父讲经·六祖坛经(22).opus", "cat": "liuzu"},
+  {"path": "jiangjing/2025年11月14日Tai师父讲经·六祖坛经(23).opus", "cat": "liuzu"},
+  {"path": "jiangjing/2025年11月15日Tai师父讲经·六祖坛经(24).opus", "cat": "liuzu"},
+  {"path": "jiangjing/2025年12月10日Tai师父讲经·六祖坛经(27).opus", "cat": "liuzu"},
+  {"path": "jiangjing/2025年12月11日Tai师父讲经·楞严经(1).opus", "cat": "lengyan"},
+  {"path": "jiangjing/2025年12月12日Tai师父讲经·楞严经(2).opus", "cat": "lengyan"},
+  {"path": "jiangjing/2025年12月13日Tai师父讲经·楞严经(3).opus", "cat": "lengyan"},
+  {"path": "jiangjing/2025年12月8日Tai师父讲经·六祖坛经(25).opus", "cat": "liuzu"},
+  {"path": "jiangjing/2025年12月9日Tai师父讲经·六祖坛经(26).opus", "cat": "liuzu"},
+  {"path": "jiangjing/2025年1月13日Tai师父讲经·楞伽经(13).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2025年1月14日Tai师父讲经·楞伽经(14).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2025年1月15日Tai师父讲经·楞伽经(15).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2025年1月16日Tai师父讲经·楞伽经(16).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2025年1月17日Tai师父讲经·楞伽经(17).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2025年1月18日Tai师父讲经·楞伽经(18).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2025年2月10日Tai师父讲经·楞伽经(19).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2025年2月11日Tai师父讲经·楞伽经(20).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2025年2月12日Tai师父讲经·楞伽经(21).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2025年2月13日Tai师父讲经·楞伽经(22).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2025年2月14日Tai师父讲经·楞伽经(23).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2025年2月15日Tai师父讲经·楞伽经(24).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2025年3月10日Tai师父讲经·楞伽经(25).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2025年3月11日Tai师父讲经·楞伽经(26).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2025年3月12日Tai师父讲经·楞伽经(27).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2025年3月13日Tai师父讲经·楞伽经(28).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2025年3月14日Tai师父讲经·楞伽经(29).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2025年3月15日Tai师父讲经·楞伽经(30).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2025年5月12日Tai师父讲经·楞伽经(31).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2025年5月13日Tai师父讲经·楞伽经(32).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2025年5月14日Tai师父讲经·楞伽经(33).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2025年5月15日Tai师父讲经·楞伽经(34).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2025年5月16日Tai师父讲经·楞伽经(35).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2025年5月17日Tai师父讲经·楞伽经(36).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2025年6月10日Tai师父讲经·楞伽经(38).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2025年6月11日Tai师父讲经·楞伽经(39).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2025年6月12日Tai师父讲经·楞伽经(40).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2025年6月13日Tai师父讲经·楞伽经(41).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2025年6月14日Tai师父讲经·楞伽经(42).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2025年6月9日Tai师父讲经·楞伽经(37).opus", "cat": "lengqie"},
+  {"path": "jiangjing/2025年7月10日Tai师父讲经·六祖坛经(4).opus", "cat": "liuzu"},
+  {"path": "jiangjing/2025年7月11日Tai师父讲经·六祖坛经(5).opus", "cat": "liuzu"},
+  {"path": "jiangjing/2025年7月12日Tai师父讲经·六祖坛经(6).opus", "cat": "liuzu"},
+  {"path": "jiangjing/2025年7月7日Tai师父讲经·六祖坛经(1).opus", "cat": "liuzu"},
+  {"path": "jiangjing/2025年7月8日Tai师父讲经·六祖坛经(2).opus", "cat": "liuzu"},
+  {"path": "jiangjing/2025年7月9日Tai师父讲经·六祖坛经(3).opus", "cat": "liuzu"},
+  {"path": "jiangjing/2025年8月4日Tai师父讲经·六祖坛经(7).opus", "cat": "liuzu"},
+  {"path": "jiangjing/2025年8月5日Tai师父讲经·六祖坛经(8).opus", "cat": "liuzu"},
+  {"path": "jiangjing/2025年8月6日Tai师父讲经·六祖坛经(9).opus", "cat": "liuzu"},
+  {"path": "jiangjing/2025年8月7日Tai师父讲经·六祖坛经(10).opus", "cat": "liuzu"},
+  {"path": "jiangjing/2025年8月8日Tai师父讲经·六祖坛经(11).opus", "cat": "liuzu"},
+  {"path": "jiangjing/2025年8月9日Tai师父讲经·六祖坛经(12).opus", "cat": "liuzu"},
+  {"path": "jiangjing/2025年9月1日Tai师父讲经·六祖坛经(13).opus", "cat": "liuzu"},
+  {"path": "jiangjing/2025年9月2日Tai师父讲经·六祖坛经(14).opus", "cat": "liuzu"},
+  {"path": "jiangjing/2025年9月3日Tai师父讲经·六祖坛经(15).opus", "cat": "liuzu"},
+  {"path": "jiangjing/2025年9月4日Tai师父讲经·六祖坛经(16).opus", "cat": "liuzu"},
+  {"path": "jiangjing/2025年9月5日Tai师父讲经·六祖坛经(17).opus", "cat": "liuzu"},
+  {"path": "jiangjing/2025年9月6日Tai师父讲经·六祖坛经(18).opus", "cat": "liuzu"},
+  {"path": "jiangjing/2026年1月10日Tai师父讲经·楞严经(9).opus", "cat": "lengyan"},
+  {"path": "jiangjing/2026年1月5日Tai师父讲经·楞严经(4).opus", "cat": "lengyan"},
+  {"path": "jiangjing/2026年1月6日Tai师父讲经·楞严经(5).opus", "cat": "lengyan"},
+  {"path": "jiangjing/2026年1月7日Tai师父讲经·楞严经(6).opus", "cat": "lengyan"},
+  {"path": "jiangjing/2026年1月8日Tai师父讲经·楞严经(7).opus", "cat": "lengyan"},
+  {"path": "jiangjing/2026年1月9日Tai师父讲经·楞严经(8).opus", "cat": "lengyan"},
+  {"path": "jiangjing/2026年2月2日Tai师父讲经·楞严经(10).opus", "cat": "lengyan"},
+  {"path": "jiangjing/2026年2月3日Tai师父讲经·楞严经(11).opus", "cat": "lengyan"},
+  {"path": "jiangjing/2026年2月4日Tai师父讲经·楞严经(12).opus", "cat": "lengyan"},
+  {"path": "jiangjing/2026年2月5日Tai师父讲经·楞严经(13).opus", "cat": "lengyan"},
+  {"path": "jiangjing/2026年2月6日Tai师父讲经·楞严经(14).opus", "cat": "lengyan"},
+  {"path": "jiangjing/2026年2月7日Tai师父讲经·楞严经(15).opus", "cat": "lengyan"},
+  {"path": "jiangjing/2026年3月2日Tai师父讲经·楞严经(16).opus", "cat": "lengyan"},
+  {"path": "jiangjing/2026年3月3日Tai师父讲经·楞严经(17).opus", "cat": "lengyan"},
+  {"path": "jiangjing/2026年3月4日Tai师父讲经·楞严经(18).opus", "cat": "lengyan"},
+  {"path": "jiangjing/2026年3月5日Tai师父讲经·楞严经(19).opus", "cat": "lengyan"},
+  {"path": "jiangjing/2026年3月6日Tai师父讲经·楞严经(20).opus", "cat": "lengyan"},
+  {"path": "jiangjing/2026年3月7日Tai师父讲经·楞严经(21).opus", "cat": "lengyan"},
+  {"path": "yili/2024年2月11日Tai师父义理·身体障碍.opus", "cat": "yili"},
+  {"path": "yili/2024年2月15日Tai师父义理·初禅.opus", "cat": "yili"},
+  {"path": "yili/2024年2月17日Tai师父义理·初始设定.opus", "cat": "yili"},
+  {"path": "yili/2024年2月17日Tai师父义理·功德回向(1).opus", "cat": "yili"},
+  {"path": "yili/2024年2月17日Tai师父义理·命运改写.opus", "cat": "yili"},
+  {"path": "yili/2024年2月17日Tai师父义理·圣经的设定.opus", "cat": "yili"},
+  {"path": "yili/2024年2月17日Tai师父义理·铺垫哲学.opus", "cat": "yili"},
+  {"path": "yili/2024年2月18日Tai师父义理·六根思考.opus", "cat": "yili"},
+  {"path": "yili/2024年2月18日Tai师父义理·我对国家的立场.opus", "cat": "yili"},
+  {"path": "yili/2024年2月18日Tai师父义理·攻击传法因果.opus", "cat": "yili"},
+  {"path": "yili/2024年2月19日Tai师父义理·加持传递的逻辑.opus", "cat": "yili"},
+  {"path": "yili/2024年2月19日Tai师父义理·杀虫子.opus", "cat": "yili"},
+  {"path": "yili/2024年2月20日Tai师父义理·往生.opus", "cat": "yili"},
+  {"path": "yili/2024年2月21日Tai师父义理·业(1).opus", "cat": "yili"},
+  {"path": "yili/2024年2月22日Tai师父义理·最初的故事.opus", "cat": "yili"},
+  {"path": "yili/2024年2月23日Tai师父义理·业(2).opus", "cat": "yili"},
+  {"path": "yili/2024年2月25日Tai师父义理·业(3).opus", "cat": "yili"},
+  {"path": "yili/2024年2月26日Tai师父义理·业与顿悟.opus", "cat": "yili"},
+  {"path": "yili/2024年2月27日Tai师父义理·凡夫谈空性.opus", "cat": "yili"},
+  {"path": "yili/2024年2月27日Tai师父义理·发心.opus", "cat": "yili"},
+  {"path": "yili/2024年2月27日Tai师父义理·恭敬.opus", "cat": "yili"},
+  {"path": "yili/2024年2月28日Tai师父义理·大乘师承.opus", "cat": "yili"},
+  {"path": "yili/2024年3月01日Tai师父义理·分别心.opus", "cat": "yili"},
+  {"path": "yili/2024年3月05日Tai师父义理·信愿行.opus", "cat": "yili"},
+  {"path": "yili/2024年3月05日Tai师父义理·耳根圆通法门.opus", "cat": "yili"},
+  {"path": "yili/2024年3月06日Tai师父义理·创世(1).opus", "cat": "yili"},
+  {"path": "yili/2024年3月06日Tai师父义理·灵感.opus", "cat": "yili"},
+  {"path": "yili/2024年3月08日Tai师父义理·功德回向(2).opus", "cat": "yili"},
+  {"path": "yili/2024年3月11日Tai师父义理·众生轮转.opus", "cat": "yili"},
+  {"path": "yili/2024年3月11日Tai师父义理·创世(2).opus", "cat": "yili"},
+  {"path": "yili/2024年3月15日Tai师父义理·人间(1).opus", "cat": "yili"},
+  {"path": "yili/2024年3月15日Tai师父义理·人间(2).opus", "cat": "yili"},
+  {"path": "yili/2024年3月18日Tai师父义理·设计剧本(1).opus", "cat": "yili"},
+  {"path": "yili/2024年3月20日Tai师父义理·补丁.opus", "cat": "yili"},
+  {"path": "yili/2024年3月20日Tai师父义理·设计剧本(2).opus", "cat": "yili"},
+  {"path": "yili/2024年3月24日Tai师父义理·大国设计.opus", "cat": "yili"},
+  {"path": "yili/2024年3月26日Tai师父义理·民主与专制.opus", "cat": "yili"},
+  {"path": "yili/2024年3月28日Tai师父义理·教职业.opus", "cat": "yili"},
+  {"path": "yili/2024年3月30日Tai师父义理·讨饭.opus", "cat": "yili"},
+  {"path": "yili/2024年4月01日Tai师父义理·序章.opus", "cat": "yili"},
+  {"path": "yili/2024年5月20日Tai师父义理·西方教设计.opus", "cat": "yili"},
+  {"path": "yili/2024年5月23日Tai师父义理·提婆达多师太.opus", "cat": "yili"},
+  {"path": "yili/2024年5月23日Tai师父义理·看人的故事.opus", "cat": "yili"},
+  {"path": "yili/2024年9月13日Tai师父义理·中秋快乐.opus", "cat": "yili"},
 ];
 
 const dateRe = /^(\d{4})年(\d{1,2})月(\d{1,2})日/;
@@ -673,20 +957,31 @@ function parseDate(name) {
   if (!m) return null;
   return { y: +m[1], mo: +m[2], d: +m[3] };
 }
-function badgeFor(name) {
-  if (name.includes("貼吧"))            return { cls: "tb",  label: "貼吧" };
-  if (name.includes("微信公眾號") || name.includes("公眾號"))
-                                         return { cls: "wx",  label: "公眾號" };
-  if (name.includes("官網"))            return { cls: "web", label: "官網" };
-  return { cls: "gz", label: "答疑" };
+
+// 逐段編碼路徑，保留 / 分隔才能指向 audio/jiangjing/… 等子資料夾
+function encodePath(path) {
+  return path.split("/").map(encodeURIComponent).join("/");
 }
 
-const items = FILES.map((name) => {
-  const d = parseDate(name) || { y: 0, mo: 0, d: 0 };
-  const b = badgeFor(name);
-  const key = `${d.y}-${String(d.mo).padStart(2, "0")}`;
-  const sortKey = d.y * 10000 + d.mo * 100 + d.d;
-  return { name, d, b, key, sortKey };
+const numRe = /[（(](\d{1,3})[）)]/;
+const items = FILES.map((f) => {
+  const base = f.path.split("/").pop();
+  const d = parseDate(base) || { y: 0, mo: 0, d: 0 };
+  const cat = CATEGORIES[f.cat] || { label: f.cat, cls: "gz", group: "其他", order: 999 };
+  const num = base.match(numRe);
+  // 同日期多講次（如金剛經 5/12 的(5)(6)）以講次號排序，否則會與錄製順序相反
+  const sortKey = d.y * 10000 + d.mo * 100 + d.d + (num ? Number(num[1]) / 1000 : 0);
+  return {
+    path: f.path,
+    base,
+    d,
+    cat: f.cat,
+    catLabel: cat.label,
+    catCls: cat.cls,
+    key: `${cat.order}|${d.y}-${String(d.mo).padStart(2, "0")}`,
+    monthLabel: d.y ? `${d.y} 年 ${d.mo} 月` : "未知日期",
+    sortKey
+  };
 });
 
 const totalCount = items.length + DABEI.length;
@@ -694,6 +989,7 @@ document.getElementById("totalCount").textContent = totalCount;
 
 const $list = document.getElementById("list");
 const $search = document.getElementById("search");
+const $category = document.getElementById("category");
 const $stats = document.getElementById("stats");
 const $sortNew = document.getElementById("sortNewest");
 const $sortOld = document.getElementById("sortOldest");
@@ -743,7 +1039,7 @@ $dabeiVolume.addEventListener("input", () => {
   try { localStorage.setItem(DABEI_VOLUME_KEY, $dabeiVolume.value); } catch (_) {}
 });
 
-let sortDir = "desc"; // desc = newest first
+let sortDir = "asc"; // asc = 舊→新（預設：從上到下由舊到新）
 
 function pauseAllAnswerAudios() {
   document.querySelectorAll("#list audio").forEach(a => { if (!a.paused) a.pause(); });
@@ -1157,10 +1453,46 @@ if ("mediaSession" in navigator) {
   } catch (_) { /* older browsers */ }
 }
 
+function buildCategoryOptions() {
+  const counts = new Map();
+  for (const it of items) counts.set(it.cat, (counts.get(it.cat) || 0) + 1);
+
+  $category.innerHTML = "";
+  const all = document.createElement("option");
+  all.value = "all";
+  all.textContent = `全部（${items.length}）`;
+  $category.appendChild(all);
+
+  const groups = new Map();
+  for (const it of items) {
+    const c = CATEGORIES[it.cat] || { group: "其他", order: 999 };
+    if (!groups.has(c.group)) groups.set(c.group, { order: c.order, cats: [] });
+    const g = groups.get(c.group);
+    g.order = Math.min(g.order, c.order);
+    if (!g.cats.includes(it.cat)) g.cats.push(it.cat);
+  }
+
+  const sorted = Array.from(groups.entries()).sort((a, b) => a[1].order - b[1].order);
+  for (const [gname, g] of sorted) {
+    const og = document.createElement("optgroup");
+    og.label = gname;
+    g.cats.sort((a, b) => (CATEGORIES[a].order || 0) - (CATEGORIES[b].order || 0));
+    for (const cat of g.cats) {
+      const o = document.createElement("option");
+      o.value = cat;
+      o.textContent = `${CATEGORIES[cat].label}（${counts.get(cat) || 0}）`;
+      og.appendChild(o);
+    }
+    $category.appendChild(og);
+  }
+}
+
 function render() {
   const q = $search.value.trim().toLowerCase();
+  const cat = $category.value || "all";
   const filtered = items.filter(it =>
-    !q || it.name.toLowerCase().includes(q)
+    (cat === "all" || it.cat === cat) &&
+    (!q || it.base.toLowerCase().includes(q) || it.catLabel.toLowerCase().includes(q))
   );
 
   filtered.sort((a, b) =>
@@ -1173,9 +1505,11 @@ function render() {
     groups.get(it.key).push(it);
   }
 
-  const groupKeys = Array.from(groups.keys()).sort((a, b) =>
-    sortDir === "desc" ? b.localeCompare(a) : a.localeCompare(b)
-  );
+  const groupKeys = Array.from(groups.keys()).sort((a, b) => {
+    const cmp = a.split("|")[1].localeCompare(b.split("|")[1]);
+    if (cmp !== 0) return sortDir === "desc" ? -cmp : cmp;
+    return Number(a.split("|")[0]) - Number(b.split("|")[0]);
+  });
 
   $list.innerHTML = "";
   $stats.textContent = `顯示 ${filtered.length} / ${items.length}`;
@@ -1190,17 +1524,16 @@ function render() {
 
   for (const gk of groupKeys) {
     const list = groups.get(gk);
-    const [y, m] = gk.split("-");
     const groupEl = document.createElement("section");
     groupEl.className = "group";
     groupEl.innerHTML = `
       <div class="group-header">
-        <span>${y === "0" ? "未知日期" : `${y} 年 ${Number(m)} 月`}</span>
+        <span>${escapeHtml(list[0].catLabel)} · ${escapeHtml(list[0].monthLabel)}</span>
         <span class="group-count">${list.length} 個音檔</span>
       </div>
     `;
     for (const it of list) {
-      const url = encodeURIComponent(it.name);
+      const url = encodePath(it.path);
       const dateLabel = it.d.y
         ? `${String(it.d.mo).padStart(2, "0")}/${String(it.d.d).padStart(2, "0")}`
         : "—";
@@ -1209,10 +1542,10 @@ function render() {
       itemEl.innerHTML = `
         <div class="item-title">
           <span class="date">${it.d.y || ""} ${dateLabel}</span>
-          <span class="name">${escapeHtml(it.name)}</span>
-          <span class="badge ${it.b.cls}">${it.b.label}</span>
+          <span class="name">${escapeHtml(it.base)}</span>
+          <span class="badge ${it.catCls}">${escapeHtml(it.catLabel)}</span>
         </div>
-        <audio controls preload="none" src="${url}" data-title="${escapeAttr(it.name)}"></audio>
+        <audio controls preload="none" src="${url}" data-title="${escapeAttr(it.base)}"></audio>
       `;
       groupEl.appendChild(itemEl);
     }
@@ -1251,6 +1584,7 @@ function wireAudio() {
 }
 
 $search.addEventListener("input", render);
+$category.addEventListener("change", render);
 $sortNew.addEventListener("click", () => {
   sortDir = "desc";
   $sortNew.classList.add("active");
@@ -1269,6 +1603,7 @@ $npStop.addEventListener("click", () => {
   $np.classList.remove("show");
 });
 
+buildCategoryOptions();
 render();
 </script>
 </body>
